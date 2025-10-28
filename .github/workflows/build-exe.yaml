@@ -24,7 +24,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build AutoClicker executable
-        run: run: pyinstaller --onefile --noconsole --name "AutoClicker" --icon icon.ico --version-file version_info.txt main.py
+        run: pyinstaller --onefile --noconsole --name "AutoClicker" --icon icon.ico --version-file version_info.txt main.py
 
       - name: Upload EXE to release
         uses: softprops/action-gh-release@v2
