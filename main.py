@@ -4,9 +4,11 @@ import time
 import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import keyboard  # External global hotkey library
+import keyboard  # type: ignore # External global hotkey library
 import ctypes
 from ctypes import wintypes
+import json
+import os
 
 # --- Windows ctypes setup ---
 user32 = ctypes.windll.user32
@@ -93,7 +95,7 @@ class AutoClickerApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Auto Clicker Pro")
-        self.geometry("950x750")
+        self.geometry("950x800")
         self.wm_attributes("-topmost", 1)
         self.configure(bg="#2c3e50")
 
@@ -103,6 +105,14 @@ class AutoClickerApp(tk.Tk):
         self.current_hotkey = None
         self.copy_pos_hotkey = None
         self.copy_color_hotkey = None
+
+        # Preload hotkeys and paths
+        self.preload_hotkeys = {"alt+2": None, "alt+3": None, "alt+4": None}
+        self.preload_csv_paths = {"alt+2": "", "alt+3": "", "alt+4": ""}
+        self.config_file = "autoclicker_config.json"
+
+        # Load saved configuration
+        self.load_config()
 
         # Configure styles
         self.setup_styles()
@@ -154,6 +164,9 @@ class AutoClickerApp(tk.Tk):
         # Control buttons section
         self.create_control_section(main_frame)
 
+        # CSV Preload section
+        self.create_preload_section(main_frame)
+
         # ALL HOTKEYS/SHORTCUTS AT THE END
         self.create_all_shortcuts_section(main_frame)
 
@@ -161,6 +174,7 @@ class AutoClickerApp(tk.Tk):
         self.update_info()
         self.register_hotkey()
         self.register_copy_shortcuts()
+        self.register_preload_hotkeys()
 
         self.protocol("WM_DELETE_WINDOW", self.close_window)
 
@@ -588,6 +602,52 @@ class AutoClickerApp(tk.Tk):
             color_shortcut_frame, text="(Copies: R,G,B)", style="Shortcut.TLabel"
         ).pack(side=tk.LEFT, padx=5)
 
+    def create_preload_section(self, parent):
+        """Section for CSV preload shortcuts"""
+        preload_frame = ttk.Frame(parent, style="Section.TFrame", padding="10")
+        preload_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(
+            preload_frame,
+            text="⚡ Quick Load CSV (Alt+2, Alt+3, Alt+4)",
+            style="Section.TLabel",
+        ).pack(anchor="w")
+
+        preload_content = ttk.Frame(preload_frame, style="Input.TFrame")
+        preload_content.pack(fill=tk.X, pady=(10, 0))
+
+        # Store entry widgets for later access
+        self.preload_entries = {}
+
+        for hotkey in ["alt+2", "alt+3", "alt+4"]:
+            row_frame = ttk.Frame(preload_content, style="Input.TFrame")
+            row_frame.pack(fill=tk.X, pady=(5, 0))
+
+            ttk.Label(
+                row_frame, text=f"{hotkey.upper()}:", style="Input.TLabel", width=8
+            ).pack(side=tk.LEFT, padx=5)
+
+            entry = ttk.Entry(row_frame, font=("Arial", 9))
+            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+            entry.insert(0, self.preload_csv_paths.get(hotkey, ""))
+            self.preload_entries[hotkey] = entry
+
+            ttk.Button(
+                row_frame,
+                text="📂 Browse",
+                command=lambda k=hotkey: self.browse_preload_csv(k),
+                style="Action.TButton",
+                width=10,
+            ).pack(side=tk.LEFT, padx=2)
+
+            ttk.Button(
+                row_frame,
+                text="❌",
+                command=lambda k=hotkey: self.clear_preload_csv(k),
+                style="Stop.TButton",
+                width=8,
+            ).pack(side=tk.LEFT, padx=2)
+
     def copy_position(self):
         """Copy current mouse position to clipboard"""
         x, y = get_mouse_position()
@@ -1001,6 +1061,148 @@ class AutoClickerApp(tk.Tk):
         else:
             self.start_sequence()
             print("▶️ Sequence started via hotkey.")
+
+    def load_config(self):
+        """Load saved CSV paths from config file"""
+        try:
+            if os.path.exists(self.config_file):
+                with open(self.config_file, "r") as f:
+                    config = json.load(f)
+                    self.preload_csv_paths = config.get(
+                        "preload_csv_paths", self.preload_csv_paths
+                    )
+        except Exception as e:
+            print(f"Error loading config: {e}")
+
+    def save_config(self):
+        """Save CSV paths to config file"""
+        try:
+            config = {"preload_csv_paths": self.preload_csv_paths}
+            with open(self.config_file, "w") as f:
+                json.dump(config, f, indent=2)
+        except Exception as e:
+            print(f"Error saving config: {e}")
+
+    def browse_preload_csv(self, hotkey):
+        """Browse and select a CSV file for preloading"""
+        path = filedialog.askopenfilename(
+            title=f"Select CSV for {hotkey.upper()}",
+            filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
+        )
+        if path:
+            self.preload_csv_paths[hotkey] = path
+            self.preload_entries[hotkey].delete(0, tk.END)
+            self.preload_entries[hotkey].insert(0, path)
+            self.save_config()
+            self.log_to_monitor(
+                f"✅ {hotkey.upper()} configured: {os.path.basename(path)}"
+            )
+
+    def clear_preload_csv(self, hotkey):
+        """Clear the CSV path for a hotkey"""
+        self.preload_csv_paths[hotkey] = ""
+        self.preload_entries[hotkey].delete(0, tk.END)
+        self.save_config()
+        self.log_to_monitor(f"🗑️ {hotkey.upper()} cleared")
+
+    def register_preload_hotkeys(self):
+        """Register hotkeys for quick CSV loading"""
+        for hotkey in ["alt+2", "alt+3", "alt+4"]:
+            if self.preload_hotkeys.get(hotkey):
+                try:
+                    keyboard.remove_hotkey(self.preload_hotkeys[hotkey])
+                except Exception:
+                    pass
+
+            try:
+                self.preload_hotkeys[hotkey] = keyboard.add_hotkey(
+                    hotkey, lambda k=hotkey: self.quick_load_csv(k)
+                )
+            except Exception as e:
+                print(f"Failed to register {hotkey}: {e}")
+
+    def quick_load_csv(self, hotkey):
+        """Quick load CSV from preloaded path"""
+        path = self.preload_csv_paths.get(hotkey, "")
+
+        if not path:
+            self.log_to_monitor(f"⚠️ {hotkey.upper()}: No CSV file configured")
+            return
+
+        if not os.path.exists(path):
+            self.log_to_monitor(f"❌ {hotkey.upper()}: File not found - {path}")
+            return
+
+        # Load the CSV file
+        try:
+            with open(path, mode="r") as file:
+                reader = csv.reader(file)
+                self.actions.clear()
+                self.action_list.delete(0, tk.END)
+
+                # Map for display names
+                click_type_display = {
+                    "left": "Left Click",
+                    "right": "Right Click",
+                    "middle": "Middle Click",
+                    "move": "Move Only",
+                }
+
+                action_count = 0
+                for row in reader:
+                    # ignore `#` lines as comments
+                    if not row or row[0].strip().startswith("#"):
+                        continue
+
+                    if len(row) >= 4:
+                        name = row[0] if row[0] else f"Action {len(self.actions) + 1}"
+                        click_type = (
+                            row[1]
+                            if row[1] in ["left", "right", "middle", "move"]
+                            else "left"
+                        )
+                        click_coords = (int(row[2]), int(row[3]))
+                        monitor_coords = None
+                        target_color = None
+                        delay_time = 0.5
+                        if len(row) >= 6 and row[4] and row[5]:
+                            monitor_coords = (int(row[4]), int(row[5]))
+                        if len(row) >= 9 and row[6] and row[7] and row[8]:
+                            target_color = (int(row[6]), int(row[7]), int(row[8]))
+                        if len(row) >= 10:
+                            delay_time = float(row[9])
+
+                        click_type_text = click_type_display.get(
+                            click_type, "Left Click"
+                        )
+
+                        if monitor_coords and target_color:
+                            action_text = f"{name} - {click_type_text} {click_coords}, monitor {monitor_coords} for color {target_color}, delay {delay_time}s"
+                        elif monitor_coords:
+                            action_text = f"{name} - {click_type_text} {click_coords}, monitor {monitor_coords} for any color change, delay {delay_time}s"
+                        else:
+                            action_text = f"{name} - {click_type_text} {click_coords}, no monitoring, delay {delay_time}s"
+
+                        self.actions.append(
+                            (
+                                name,
+                                click_type,
+                                click_coords,
+                                monitor_coords,
+                                target_color,
+                                delay_time,
+                            )
+                        )
+                        self.action_list.insert(tk.END, action_text)
+                        action_count += 1
+
+            filename = os.path.basename(path)
+            self.log_to_monitor(
+                f"⚡ {hotkey.upper()}: Loaded {action_count} actions from {filename}"
+            )
+
+        except Exception as e:
+            self.log_to_monitor(f"❌ {hotkey.upper()}: Failed to load - {str(e)}")
 
     def close_window(self):
         self.stop_sequence()
