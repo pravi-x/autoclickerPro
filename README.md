@@ -36,7 +36,7 @@ python main.py
 
 ```
 pip install pyinstaller
-run: pyinstaller --onefile --noconsole --name "AutoClicker" --icon icon.ico --version-file version_info.txt main.py
+pyinstaller --onefile --noconsole --name "AutoClicker" --icon icon.ico --version-file version_info.txt main.py
 
 ```
 

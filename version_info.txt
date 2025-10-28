@@ -17,11 +17,11 @@ VSVersionInfo(
         [
           StringStruct('CompanyName', 'pravi-x'),
           StringStruct('FileDescription', 'Autoclicker: Automates mouse clicks and movements'),
-          StringStruct('FileVersion', '1.0.0'),
+          StringStruct('FileVersion', '1.4'),
           StringStruct('InternalName', 'AutoClicker'),
           StringStruct('OriginalFilename', 'AutoClicker.exe'),
           StringStruct('ProductName', 'Pravi-X AutoClicker'),
-          StringStruct('ProductVersion', '1.0.0')
+          StringStruct('ProductVersion', '1.4')
         ]
       )
     ]),
