@@ -27,9 +27,12 @@ jobs:
       - name: Build AutoClicker executable
         run: pyinstaller --onedir --noconsole --name "AutoClicker" --icon icon.ico --version-file version_info.txt main.py
 
-      - name: Upload EXE to GitHub Release
+      - name: Zip EXE folder
+        run: Compress-Archive -Path dist/AutoClicker/* -DestinationPath dist/AutoClicker.zip
+
+      - name: Upload zipped folder to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/AutoClicker.exe
+          files: dist/AutoClicker.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
