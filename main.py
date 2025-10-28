@@ -786,6 +786,10 @@ class AutoClickerApp(tk.Tk):
                 }
 
                 for row in reader:
+                    # ignore `#` lines as comments
+                    if not row or row[0].strip().startswith("#"):
+                        continue
+
                     if len(row) >= 4:
                         name = row[0] if row[0] else f"Action {len(self.actions) + 1}"
                         click_type = (
