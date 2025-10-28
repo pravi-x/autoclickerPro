@@ -40,4 +40,10 @@ run: pyinstaller --onefile --noconsole --name "AutoClicker" --icon icon.ico --ve
 
 ```
 
+### or with github actions
+
+```
+git tag v1.0 && git push origin v1.0
+```
+
 The executable will be available in the `dist/` folder
