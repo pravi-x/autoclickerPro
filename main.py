@@ -282,13 +282,6 @@ class AutoClickerApp(tk.Tk):
         ttk.Label(
             pos_frame, textvariable=self.position_var, style="Regular.TLabel"
         ).pack(side=tk.LEFT)
-        ttk.Button(
-            pos_frame,
-            text="📋",
-            command=self.copy_position,
-            style="Copy.TButton",
-            width=3,
-        ).pack(side=tk.LEFT, padx=(5, 0))
 
         # Color section
         color_frame = ttk.Frame(info_content, style="Input.TFrame")
@@ -298,13 +291,6 @@ class AutoClickerApp(tk.Tk):
         ttk.Label(
             color_frame, textvariable=self.color_var, style="Regular.TLabel"
         ).pack(side=tk.LEFT)
-        ttk.Button(
-            color_frame,
-            text="📋",
-            command=self.copy_color,
-            style="Copy.TButton",
-            width=3,
-        ).pack(side=tk.LEFT, padx=(5, 0))
 
     def create_input_section(self, parent):
         input_frame = ttk.Frame(parent, style="Section.TFrame", padding="10")
@@ -534,7 +520,7 @@ class AutoClickerApp(tk.Tk):
         start_hotkey_frame.pack(fill=tk.X, pady=(5, 0))
 
         ttk.Label(
-            start_hotkey_frame, text="Start Sequence:", style="Input.TLabel"
+            start_hotkey_frame, text="Start/Stop Sequence:", style="Input.TLabel"
         ).pack(side=tk.LEFT, padx=5)
         self.hotkey_input = ttk.Entry(start_hotkey_frame, font=("Arial", 9), width=15)
         self.hotkey_input.pack(side=tk.LEFT, padx=5)
@@ -642,10 +628,10 @@ class AutoClickerApp(tk.Tk):
             self.copy_color_hotkey = keyboard.add_hotkey(
                 color_shortcut, self.copy_color
             )
-            messagebox.showinfo(
-                "Shortcuts",
-                f"Shortcuts registered:\n• Position: {pos_shortcut}\n• Color: {color_shortcut}",
-            )
+            # messagebox.showinfo(
+            #     "Shortcuts",
+            #     f"Shortcuts registered:\n• Position: {pos_shortcut}\n• Color: {color_shortcut}",
+            # )
         except Exception as e:
             messagebox.showwarning(
                 "Shortcut Error", f"Failed to register shortcuts: {e}"
@@ -986,16 +972,31 @@ class AutoClickerApp(tk.Tk):
 
     def register_hotkey(self):
         hotkey_str = self.hotkey_input.get().strip().lower()
+
+        # Remove previous hotkey if any
         if self.current_hotkey:
             try:
                 keyboard.remove_hotkey(self.current_hotkey)
             except Exception:
                 pass
+
         try:
-            self.current_hotkey = keyboard.add_hotkey(hotkey_str, self.start_sequence)
-            messagebox.showinfo("Hotkey", f"Hotkey '{hotkey_str}' registered.")
+            # ✅ Register toggle instead of only start
+            self.current_hotkey = keyboard.add_hotkey(hotkey_str, self.toggle_sequence)
+            messagebox.showinfo(
+                "Hotkey", f"Hotkey '{hotkey_str}' registered as Start/Stop toggle."
+            )
         except Exception as e:
             messagebox.showwarning("Hotkey Error", f"Failed to register: {e}")
+
+    def toggle_sequence(self):
+        """Start or stop depending on current running state."""
+        if self.running:
+            self.stop_sequence()
+            print("⏹️ Sequence stopped via hotkey.")
+        else:
+            self.start_sequence()
+            print("▶️ Sequence started via hotkey.")
 
     def close_window(self):
         self.stop_sequence()
