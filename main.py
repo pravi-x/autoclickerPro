@@ -1062,26 +1062,42 @@ class AutoClickerApp(tk.Tk):
             self.start_sequence()
             print("▶️ Sequence started via hotkey.")
 
+    def get_config_path(self):
+        """Return a writable path for the config file"""
+        if getattr(sys, "frozen", False):
+            # EXE mode → use AppData or same folder as EXE
+            base_dir = os.path.join(
+                os.path.expanduser("~"), "AppData", "Local", "AutoClicker"
+            )
+            os.makedirs(base_dir, exist_ok=True)
+        else:
+            # Normal Python script
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        return os.path.join(base_dir, self.config_file)
+
+    def save_config(self):
+        """Save CSV paths to config file"""
+        try:
+            config_path = self.get_config_path()
+            config = {"preload_csv_paths": self.preload_csv_paths}
+            with open(config_path, "w") as f:
+                json.dump(config, f, indent=2)
+        except Exception as e:
+            print(f"Error saving config: {e}")
+
     def load_config(self):
         """Load saved CSV paths from config file"""
         try:
-            if os.path.exists(self.config_file):
-                with open(self.config_file, "r") as f:
+            config_path = self.get_config_path()
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
                     config = json.load(f)
                     self.preload_csv_paths = config.get(
                         "preload_csv_paths", self.preload_csv_paths
                     )
         except Exception as e:
             print(f"Error loading config: {e}")
-
-    def save_config(self):
-        """Save CSV paths to config file"""
-        try:
-            config = {"preload_csv_paths": self.preload_csv_paths}
-            with open(self.config_file, "w") as f:
-                json.dump(config, f, indent=2)
-        except Exception as e:
-            print(f"Error saving config: {e}")
 
     def browse_preload_csv(self, hotkey):
         """Browse and select a CSV file for preloading"""
