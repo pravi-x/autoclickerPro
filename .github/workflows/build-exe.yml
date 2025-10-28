@@ -1,8 +1,9 @@
 name: Build AutoClicker EXE
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'  # triggers on any tag that starts with 'v', e.g., v1.0, v2.5
 
 jobs:
   build:
@@ -26,7 +27,7 @@ jobs:
       - name: Build AutoClicker executable
         run: pyinstaller --onefile --noconsole --name "AutoClicker" --icon icon.ico --version-file version_info.txt main.py
 
-      - name: Upload EXE to release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/AutoClicker.exe
