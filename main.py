@@ -688,10 +688,6 @@ class AutoClickerApp(tk.Tk):
             self.copy_color_hotkey = keyboard.add_hotkey(
                 color_shortcut, self.copy_color
             )
-            # messagebox.showinfo(
-            #     "Shortcuts",
-            #     f"Shortcuts registered:\n• Position: {pos_shortcut}\n• Color: {color_shortcut}",
-            # )
         except Exception as e:
             messagebox.showwarning(
                 "Shortcut Error", f"Failed to register shortcuts: {e}"
